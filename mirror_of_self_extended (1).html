@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirror of Self - Extended Boss Edition</title>
+    <style>
+        body {
+            background-color: #121214;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        #game-container {
+            width: 800px;
+            background-color: #1a1a1e;
+            border: 3px solid #2d2d34;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            box-sizing: border-box;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 2px solid #3a3a44;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #f1f5f9;
+            margin: 0;
+            font-size: 28px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.1);
+        }
+
+        .floor-info {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Layout Grid */
+        .game-layout {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 20px;
+        }
+
+        /* Sidebar Panels */
+        .panel {
+            background-color: #222227;
+            border: 1px solid #3a3a44;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #38bdf8;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #3a3a44;
+            padding-bottom: 4px;
+        }
+
+        /* Stats & UI Bars */
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .stat-name {
+            color: #94a3b8;
+        }
+
+        .stat-val {
+            font-weight: bold;
+            color: #f8fafc;
+        }
+
+        .stat-alloc-btn {
+            background-color: #38bdf8;
+            color: #0f172a;
+            border: none;
+            border-radius: 4px;
+            width: 22px;
+            height: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .stat-alloc-btn:hover {
+            background-color: #7dd3fc;
+        }
+
+        .ui-bar-container {
+            margin-bottom: 12px;
+        }
+
+        .ui-bar-label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .ui-bar {
+            height: 10px;
+            background-color: #334155;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .ui-bar-fill {
+            height: 100%;
+            width: 100%;
+            transition: width 0.1s ease;
+        }
+
+        .hp-fill { background-color: #ef4444; }
+        .xp-fill { background-color: #22c55e; }
+        .boss-hp-fill { background-color: #a855f7; }
+
+        /* Main Canvas/Viewport Area */
+        .main-view {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #game-canvas {
+            background-color: #0b0b0d;
+            border: 2px solid #3a3a44;
+            border-radius: 6px;
+            cursor: crosshair;
+        }
+
+        /* Screen States */
+        .screen-overlay {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            height: 400px;
+            background-color: #151518;
+            border: 2px solid #3a3a44;
+            border-radius: 6px;
+        }
+
+        .screen-overlay h2 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #f1f5f9;
+        }
+
+        .screen-overlay p {
+            color: #94a3b8;
+            max-width: 450px;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .btn-action {
+            background-color: #f59e0b;
+            color: #0f172a;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background 0.2s;
+        }
+
+        .btn-action:hover {
+            background-color: #fbbf24;
+        }
+
+        .btn-continue {
+            background-color: #22c55e;
+        }
+        .btn-continue:hover {
+            background-color: #4ade80;
+        }
+
+        /* Controls Reference List */
+        .controls-list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .controls-list li {
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .control-key {
+            color: #cbd5e1;
+            background-color: #334155;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        /* Logger / Feedback */
+        #combat-log {
+            background-color: #0b0b0d;
+            border: 1px solid #3a3a44;
+            border-radius: 4px;
+            height: 60px;
+            padding: 8px;
+            font-size: 12px;
+            font-family: monospace;
+            overflow-y: auto;
+            color: #a7f3d0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <header>
+        <h1 id="game-title">MIRROR OF SELF</h1>
+        <div class="floor-info" id="location-display">Floor 1 • Level 1/10</div>
+    </header>
+
+    <div class="game-layout">
+        <!-- LEFT SIDEBAR: HUD & CONTROLS -->
+        <aside>
+            <div class="panel">
+                <div class="panel-title">Character Status</div>
+                
+                <div class="ui-bar-container">
+                    <div class="ui-bar-label"><span>HP</span><span id="hp-text">100/100</span></div>
+                    <div class="ui-bar"><div id="hp-bar" class="ui-bar-fill hp-fill"></div></div>
+                </div>
+
+                <div class="ui-bar-container">
+                    <div class="ui-bar-label"><span>XP</span><span id="xp-text">0/100</span></div>
+                    <div class="ui-bar"><div id="xp-bar" class="ui-bar-fill xp-fill"></div></div>
+                </div>
+                
+                <div class="stat-row" style="margin-top: 10px;">
+                    <span class="stat-name" style="color:#f59e0b; font-weight:bold;">Essence Points:</span>
+                    <span class="stat-val" id="essence-val" style="color:#f59e0b;">0</span>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Permanent Stats</div>
+                <div class="stat-row">
+                    <span class="stat-name">STR (Strength)</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="stat-val" id="stat-str">10</span>
+                        <button class="stat-alloc-btn hidden" id="alloc-str" onclick="allocateStat('str')">+</button>
+                    </div>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-name">DEF (Defense)</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="stat-val" id="stat-def">10</span>
+                        <button class="stat-alloc-btn hidden" id="alloc-def" onclick="allocateStat('def')">+</button>
+                    </div>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-name">SPD (Speed)</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="stat-val" id="stat-spd">10</span>
+                        <button class="stat-alloc-btn hidden" id="alloc-spd" onclick="allocateStat('spd')">+</button>
+                    </div>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-name">ARC (Arcana)</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="stat-val" id="stat-arc">10</span>
+                        <button class="stat-alloc-btn hidden" id="alloc-arc" onclick="allocateStat('arc')">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Controls</div>
+                <ul class="controls-list">
+                    <li><span>Move</span><span class="control-key">WASD</span></li>
+                    <li><span>Aim</span><span class="control-key">Mouse</span></li>
+                    <li><span>Attack</span><span class="control-key">Left Click</span></li>
+                    <li><span>Dash</span><span class="control-key">Space</span></li>
+                    <li><span>Abilities</span><span class="control-key">1 / 2 / 3</span></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- RIGHT MAIN AREA: SCREENS & CANVAS -->
+        <main class="main-view">
+            <!-- Boss HP Track visible only during boss stages -->
+            <div id="boss-hud" class="panel hidden" style="margin-bottom: 0; padding: 10px;">
+                <div class="ui-bar-container" style="margin-bottom: 0;">
+                    <div class="ui-bar-label"><span id="boss-name-label" style="font-weight:bold; color:#a855f7;">BOSS</span><span id="boss-hp-text">1000/1000</span></div>
+                    <div class="ui-bar" style="height: 14px;"><div id="boss-hp-bar" class="ui-bar-fill boss-hp-fill"></div></div>
+                </div>
+                <div id="boss-phase-alert" style="font-size:11px; color:#ef4444; font-weight:bold; text-align:center; margin-top:4px; letter-spacing:1px;"></div>
+            </div>
+
+            <!-- Start Screen -->
+            <div id="screen-start" class="screen-overlay">
+                <h2>Five Aspects. Five Elements.<br>One Reflection.</h2>
+                <p>Descend through 5 floors of 10 levels. Defeat elemental bosses that exploit your own stats, and face the final Mirror that duplicates your precise build.</p>
+                <button class="btn-action" onclick="startGame()">Begin the Descent</button>
+            </div>
+
+            <!-- Allocation Screen -->
+            <div id="screen-allocate" class="screen-overlay hidden">
+                <h2>Allocate Your Essence</h2>
+                <p>Distribute permanent baseline stat boosts earned through regular progression before continuing your descent.</p>
+                <button class="btn-action btn-continue" onclick="finishAllocation()">Continue Descent</button>
+            </div>
+
+            <!-- Aspect Defeated Screen -->
+            <div id="screen-victory" class="screen-overlay hidden">
+                <h2 id="victory-title" style="color: #4ade80;">Aspect Defeated</h2>
+                <p id="victory-desc">An element falls back into alignment. Your stats have grown deeper.</p>
+                <button class="btn-action btn-continue" id="victory-btn" onclick="advanceAfterBoss()">Continue</button>
+            </div>
+
+            <!-- Game Over / Complete Screen -->
+            <div id="screen-end" class="screen-overlay hidden">
+                <h2 id="end-title">The Mirror Crack'd</h2>
+                <p id="end-desc">You were defeated by your own design.</p>
+                <button class="btn-action" onclick="resetToStart()">Play Again</button>
+            </div>
+
+            <!-- Gameplay Field -->
+            <canvas id="game-canvas" width="540" height="400" class="hidden"></canvas>
+
+            <!-- Logger Output Box -->
+            <div id="combat-log">System initialized. Awaiting descent instructions...</div>
+        </main>
+    </div>
+</div>
+
+<script>
+    // --- GAME ENGINE STATE CONFIG ---
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let gameState = 'START'; // START, PLAYING, ALLOCATE, VICTORY, END
+    let currentFloor = 1;
+    let currentLevel = 1;
+    let essencePoints = 0;
+
+    // Player Stats Configuration
+    let player = {
+        x: 100, y: 200, radius: 12,
+        baseHp: 100, hp: 100,
+        str: 10, def: 10, spd: 10, arc: 10,
+        xp: 0, nextXp: 100,
+        dashCooldown: 0, dashTimer: 0, dashVx: 0, dashVy: 0,
+        abilityCooldowns: [0, 0, 0]
+    };
+
+    // Input States
+    let keys = {};
+    let mouse = { x: 0, y: 0 };
+
+    // Entities
+    let projectiles = [];
+    let enemies = [];
+    let particles = [];
+    let boss = null;
+    let floorHazards = [];
+
+    // Environmental / Arena Constants
+    const CANVAS_WIDTH = 540;
+    const CANVAS_HEIGHT = 400;
+
+    // Boss Data Registry
+    const BOSS_TEMPLATES = {
+        1: { name: "The Fractured Sentinel", element: "Earth", mimic: "DEF", baseHp: 600, color: "#854d0e" },
+        2: { name: "The Torrential Siren", element: "Water", mimic: "SPD", baseHp: 500, color: "#0284c7" },
+        3: { name: "The Cinder Executioner", element: "Fire", mimic: "STR", baseHp: 700, color: "#dc2626" },
+        4: { name: "The Zephyr Phantom", element: "Air", mimic: "ARC", baseHp: 550, color: "#0d9488" },
+        5: { name: "The Final Mirror", element: "Reflection", mimic: "ALL", baseHp: 1000, color: "#e2e8f0" }
+    };
+
+    // --- SYSTEM UTILITIES & LISTENERS ---
+    window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; handleAbilityPress(e.key); });
+    window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    });
+    canvas.addEventListener('mousedown', e => { if (e.button === 0 && gameState === 'PLAYING') firePlayerProjectile(); });
+
+    function logMessage(msg) {
+        const logBox = document.getElementById('combat-log');
+        logBox.innerHTML = msg + "<br>" + logBox.innerHTML;
+    }
+
+    function updateUiDisplays() {
+        document.getElementById('hp-text').innerText = `${Math.max(0, Math.floor(player.hp))}/${player.baseHp}`;
+        document.getElementById('hp-bar').style.width = `${(Math.max(0, player.hp) / player.baseHp) * 100}%`;
+        document.getElementById('xp-text').innerText = `${player.xp}/${player.nextXp}`;
+        document.getElementById('xp-bar').style.width = `${(player.xp / player.nextXp) * 100}%`;
+        
+        document.getElementById('stat-str').innerText = player.str;
+        document.getElementById('stat-def').innerText = player.def;
+        document.getElementById('stat-spd').innerText = player.spd;
+        document.getElementById('stat-arc').innerText = player.arc;
+        document.getElementById('essence-val').innerText = essencePoints;
+
+        // Manage allocations button views
+        const showAlloc = (essencePoints > 0 && gameState === 'ALLOCATE');
+        ['str','def','spd','arc'].forEach(id => {
+            const btn = document.getElementById(`alloc-${id}`);
+            if(showAlloc) btn.classList.remove('hidden');
+            else btn.classList.add('hidden');
+        });
+
+        if (boss && gameState === 'PLAYING') {
+            document.getElementById('boss-hud').classList.remove('hidden');
+            document.getElementById('boss-name-label').innerText = boss.name.toUpperCase();
+            document.getElementById('boss-hp-text').innerText = `${Math.max(0, Math.floor(boss.hp))}/${boss.maxHp}`;
+            document.getElementById('boss-hp-bar').style.width = `${(Math.max(0, boss.hp) / boss.maxHp) * 100}%`;
+            if (boss.phase === 2) {
+                document.getElementById('boss-phase-alert').innerText = `⚠️ PHASE 2: ${boss.phaseName.toUpperCase()} ENRAGED!`;
+            } else {
+                document.getElementById('boss-phase-alert').innerText = `PHASE 1: STAT MIMICRY ENGAGED (${boss.mimicStat})`;
+            }
+        } else {
+            document.getElementById('boss-hud').classList.add('hidden');
+        }
+
+        if (currentFloor === 5 && currentLevel === 10) {
+            document.getElementById('location-display').innerText = "Floor 5 • FINAL CONFRONTATION";
+        } else {
+            document.getElementById('location-display').innerText = `Floor ${currentFloor} • Level ${currentLevel}/10`;
+        }
+    }
+
+    // --- SCREEN NAVIGATION HANDLERS ---
+    function switchScreen(targetState) {
+        gameState = targetState;
+        document.getElementById('screen-start').classList.add('hidden');
+        document.getElementById('screen-allocate').classList.add('hidden');
+        document.getElementById('screen-victory').classList.add('hidden');
+        document.getElementById('screen-end').classList.add('hidden');
+        canvas.classList.add('hidden');
+
+        if (targetState === 'PLAYING') {
+            canvas.classList.remove('hidden');
+        } else if (targetState === 'START') {
+            document.getElementById('screen-start').classList.remove('hidden');
+        } else if (targetState === 'ALLOCATE') {
+            document.getElementById('screen-allocate').classList.remove('hidden');
+        } else if (targetState === 'VICTORY') {
+            document.getElementById('screen-victory').classList.remove('hidden');
+        } else if (targetState === 'END') {
+            document.getElementById('screen-end').classList.remove('hidden');
+        }
+        updateUiDisplays();
+    }
+
+    function startGame() {
+        currentFloor = 1;
+        currentLevel = 1;
+        essencePoints = 0;
+        player.str = 10; player.def = 10; player.spd = 10; player.arc = 10;
+        player.hp = player.baseHp;
+        player.xp = 0;
+        logMessage("You step into the abyss. Floor 1 begins.");
+        generateLevel();
+        switchScreen('PLAYING');
+    }
+
+    function resetToStart() {
+        switchScreen('START');
+    }
+
+    function allocateStat(stat) {
+        if (essencePoints <= 0) return;
+        player[stat]++;
+        essencePoints--;
+        if (stat === 'str') player.baseHp = 100 + (player.str - 10) * 10; // STR adds extra base health scale
+        updateUiDisplays();
+    }
+
+    function finishAllocation() {
+        logMessage(`Descent resumed. Stepping into Floor ${currentFloor}, Level ${currentLevel}.`);
+        generateLevel();
+        switchScreen('PLAYING');
+    }
+
+    function advanceAfterBoss() {
+        if (currentFloor === 5 && currentLevel === 10) {
+            // Finished game!
+            document.getElementById('end-title').innerText = "The Mirror Shattered";
+            document.getElementById('end-title').style.color = "#38bdf8";
+            document.getElementById('end-desc').innerText = "You have broken the loop, integrated your shadows, and climbed out of the depths.";
+            switchScreen('END');
+        } else {
+            currentFloor++;
+            currentLevel = 1;
+            essencePoints += 3; // Bonus points for wiping out a major regional boss
+            switchScreen('ALLOCATE');
+        }
+    }
+
+    // --- GAMEPLAY INITIALIZERS & LEVEL GENERATORS ---
+    function generateLevel() {
+        projectiles = [];
+        enemies = [];
+        particles = [];
+        floorHazards = [];
+        boss = null;
+        
+        player.x = 80;
+        player.y = 200;
+        player.hp = player.baseHp; // Restoration upon advancing depths
+
+        if (currentLevel === 10) {
+            setupBossFight();
+        } else {
+            // Generate standard floor room minions
+            let minionCount = 2 + currentFloor + Math.floor(currentLevel / 3);
+            for (let i = 0; i < minionCount; i++) {
+                enemies.push({
+                    x: 250 + Math.random() * 240,
+                    y: 80 + Math.random() * 240,
+                    radius: 10,
+                    hp: 25 + currentFloor * 15,
+                    maxHp: 25 + currentFloor * 15,
+                    speed: 1.2 + (currentFloor * 0.15),
+                    type: 'minion',
+                    color: '#f43f5e'
+                });
+            }
+        }
+    }
+
+    function setupBossFight() {
+        const config = BOSS_TEMPLATES[currentFloor];
+        boss = {
+            x: 400, y: 200,
+            radius: 26,
+            name: config.name,
+            element: config.element,
+            mimicStat: config.mimic,
+            phase: 1,
+            phaseName: "Normal",
+            hp: config.baseHp + (player.str * 5), // Dynamic padding
+            maxHp: config.baseHp + (player.str * 5),
+            color: config.color,
+            attackTimer: 0,
+            actionPatternTimer: 0,
+            
+            // Dynamic parameters adjusted by copied stats
+            copiedDef: 0,
+            copiedSpd: 1.5,
+            copiedStrMultiplier: 1.0,
+            copiedArcSize: 0
+        };
+
+        logMessage(`⚠️ WARNING: Entering Domain of ${boss.name}!`);
+        calculateStatMimicryEffect();
+    }
+
+    function calculateStatMimicryEffect() {
+        if (!boss) return;
+        
+        // Dynamic stats calculated relative to current build profiles
+        if (boss.mimicStat === 'DEF' || boss.mimicStat === 'ALL') {
+            boss.copiedDef = player.def * 0.8;
+            logMessage(`[MIMIC] ${boss.name} hardens its molecular shell armor using your DEF (${player.def}).`);
+        }
+        if (boss.mimicStat === 'SPD' || boss.mimicStat === 'ALL') {
+            boss.copiedSpd = 1.0 + (player.spd * 0.12);
+            logMessage(`[MIMIC] ${boss.name} targets your speed vectors. Moving at dynamic SPD base: ${boss.copiedSpd.toFixed(1)}`);
+        }
+        if (boss.mimicStat === 'STR' || boss.mimicStat === 'ALL') {
+            boss.copiedStrMultiplier = 1.0 + (player.str * 0.08);
+            logMessage(`[MIMIC] ${boss.name} feeds on your physical raw energy. Base damage multiplier: x${boss.copiedStrMultiplier.toFixed(1)}`);
+        }
+        if (boss.mimicStat === 'ARC' || boss.mimicStat === 'ALL') {
+            boss.copiedArcSize = player.arc * 1.5;
+            logMessage(`[MIMIC] ${boss.name} manifests localized dimensional anomalies derived from your ARC (${player.arc}).`);
+        }
+    }
+
+    function triggerBossPhaseTwo() {
+        boss.phase = 2;
+        spawnExplosion(boss.x, boss.y, boss.color, 30);
+
+        if (boss.mimicStat === 'DEF') {
+            boss.phaseName = "Kinetic Core";
+            boss.color = "#ca8a04";
+            boss.radius = 16; // Shattered shell configuration
+            logMessage(`⚡ PHASE 2: ${boss.name} shatters its armor shell! Activating THORNS REFLECTION and stealing 50% of your defense!`);
+        } else if (boss.mimicStat === 'SPD') {
+            boss.phaseName = "Tidal Overdrive";
+            boss.color = "#00ffff";
+            logMessage(`⚡ PHASE 2: ${boss.name} enters hyper-overdrive, instantly deploying fast mirroring phantoms!`);
+        } else if (boss.mimicStat === 'STR') {
+            boss.phaseName = "Molten Berserk";
+            boss.color = "#f97316";
+            logMessage(`⚡ PHASE 2: ${boss.name} strips weapon locks! Direct hits will now permanently absorb your physical STR!`);
+        } else if (boss.mimicStat === 'ARC') {
+            boss.phaseName = "Arcane Singularity";
+            boss.color = "#a855f7";
+            logMessage(`⚡ PHASE 2: ${boss.name} triggers ABILITY OVERLOAD! Your active spells will lock and force auto-cast explosions!`);
+        } else if (boss.mimicStat === 'ALL') {
+            boss.phaseName = "Split Doppelgänger";
+            boss.color = "#ffffff";
+            boss.radius = 20;
+            logMessage(`⚡ PHASE 2: The Mirror shatters into twin Offensive and Defensive operational configurations!`);
+            // Spawn the twin background support clone
+            enemies.push({
+                x: 150, y: 100, radius: 18,
+                hp: boss.maxHp * 0.4, maxHp: boss.maxHp * 0.4,
+                type: 'boss_twin_def', color: '#64748b', speed: 2.2
+            });
+        }
+    }
+
+    // --- GAME MECHANIC ENGINE ACTIONS ---
+    function firePlayerProjectile() {
+        const dx = mouse.x - player.x;
+        const dy = mouse.y - player.y;
+        const angle = Math.atan2(dy, dx);
+        
+        // ARC stat extends scalar project scale properties
+        const projSize = 4 + (player.arc * 0.2);
+        const damage = 10 + (player.str * 1.5);
+        const speed = 5 + (player.spd * 0.2);
+
+        projectiles.push({
+            x: player.x, y: player.y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            radius: projSize,
+            damage: damage,
+            fromPlayer: true,
+            color: '#38bdf8'
+        });
+    }
+
+    function handleAbilityPress(key) {
+        if (gameState !== 'PLAYING') return;
+
+        if (key === '1' && player.abilityCooldowns[0] <= 0) {
+            // Ability 1: Burst Nova Ring
+            logMessage("Used Ability 1: Nova Ring!");
+            const count = 12;
+            for(let i=0; i<count; i++) {
+                const angle = (Math.PI * 2 / count) * i;
+                projectiles.push({
+                    x: player.x, y: player.y,
+                    vx: Math.cos(angle) * 4, vy: Math.sin(angle) * 4,
+                    radius: 6, damage: 5 + (player.arc * 0.8),
+                    fromPlayer: true, color: '#60a5fa'
+                });
+            }
+            player.abilityCooldowns[0] = 180; // 3 seconds at 60fps
+        }
+        else if (key === '2' && player.abilityCooldowns[1] <= 0) {
+            // Ability 2: Heavy Cleave Shot
+            logMessage("Used Ability 2: Heavy Cleave Shot!");
+            const dx = mouse.x - player.x; const dy = mouse.y - player.y;
+            const angle = Math.atan2(dy, dx);
+            projectiles.push({
+                x: player.x, y: player.y,
+                vx: Math.cos(angle) * 7, vy: Math.sin(angle) * 7,
+                radius: 15, damage: 25 + (player.str * 3),
+                fromPlayer: true, color: '#f59e0b'
+            });
+            player.abilityCooldowns[1] = 300; // 5 seconds
+        }
+        else if (key === '3' && player.abilityCooldowns[2] <= 0) {
+            // Ability 3: Temporal Speed Ward
+            logMessage("Used Ability 3: Temporal Ward active (+50% Speed)!");
+            player.hp = Math.min(player.baseHp, player.hp + (player.arc * 1.2)); // Minor arcane mend heal
+            player.abilityCooldowns[2] = 480; // 8 seconds
+        }
+    }
+
+    function spawnExplosion(x, y, color, count=10) {
+        for(let i=0; i<count; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6,
+                radius: 2 + Math.random()*4,
+                life: 30 + Math.random()*20,
+                color: color
+            });
+        }
+    }
+
+    // --- GAME ENGINE HEARTBEAT LOOP (RUNS 60FPS) ---
+    function tick() {
+        if (gameState === 'PLAYING') {
+            updateLogic();
+            renderView();
+        }
+        requestAnimationFrame(tick);
+    }
+
+    function updateLogic() {
+        // Cooldown processing loops
+        if (player.dashCooldown > 0) player.dashCooldown--;
+        for (let i = 0; i < 3; i++) {
+            if (player.abilityCooldowns[i] > 0) player.abilityCooldowns[i]--;
+        }
+
+        // Active forced phase 2 effect for air boss
+        if (boss && boss.phase === 2 && boss.mimicStat === 'ARC') {
+            for (let i = 0; i < 3; i++) {
+                if (player.abilityCooldowns[i] <= 0) {
+                    handleAbilityPress((i+1).toString());
+                    // Force explosion directly at random node
+                    spawnExplosion(player.x + (Math.random()-0.5)*80, player.y + (Math.random()-0.5)*80, '#c084fc', 8);
+                    player.hp -= Math.max(1, 10 - (player.def * 0.2));
+                }
+            }
+        }
+
+        // --- PLAYER MOVEMENT ROUTINES ---
+        let currentMoveSpd = 2.5 + (player.spd * 0.1);
+        if (player.abilityCooldowns[2] > 300) currentMoveSpd *= 1.5; // Speed ward boost trigger active
+
+        if (player.dashTimer > 0) {
+            player.x += player.dashVx;
+            player.y += player.dashVy;
+            player.dashTimer--;
+            // Spawn motion trails trail particles
+            if (Math.random() > 0.4) particles.push({ x: player.x, y: player.y, vx:0, vy:0, radius:3, life:15, color:'#38bdf8' });
+        } else {
+            let mx = 0; let my = 0;
+            if (keys['w'] || keys['arrowup']) my -= 1;
+            if (keys['s'] || keys['arrowdown']) my += 1;
+            if (keys['a'] || keys['arrowleft']) mx -= 1;
+            if (keys['d'] || keys['arrowright']) mx += 1;
+
+            // Phase 2 Arcane Chaos inverted control vector rule check
+            if (boss && boss.phase === 2 && boss.mimicStat === 'ALL' && Math.floor(Date.now()/2000)%2===0) {
+                mx = -mx; my = -my; // Scramble axis matrices dynamically
+            }
+
+            if (mx !== 0 || my !== 0) {
+                const len = Math.sqrt(mx*mx + my*my);
+                player.x += (mx / len) * currentMoveSpd;
+                player.y += (my / len) * currentMoveSpd;
+            }
+
+            // Fire out space dash logic execution
+            if (keys[' '] && player.dashCooldown <= 0 && (mx !== 0 || my !== 0)) {
+                const len = Math.sqrt(mx*mx + my*my);
+                player.dashVx = (mx / len) * (currentMoveSpd * 3.5);
+                player.dashVy = (my / len) * (currentMoveSpd * 3.5);
+                player.dashTimer = 10;
+                player.dashCooldown = 60; // 1 second operational reset
+            }
+        }
+
+        // Bound parameters within bounding wall limits safely
+        player.x = Math.max(player.radius, Math.min(CANVAS_WIDTH - player.radius, player.x));
+        player.y = Math.max(player.radius, Math.min(CANVAS_HEIGHT - player.radius, player.y));
+
+        // --- ENEMY INFRASTRUCTURE LOGIC AND AI ROOPS ---
+        enemies.forEach((enemy, idx) => {
+            let targetX = player.x;
+            let targetY = player.y;
+
+            // Twin defense boss shields the anchor main boss
+            if (enemy.type === 'boss_twin_def' && boss) {
+                targetX = boss.x + Math.sin(Date.now()/400)*60;
+                targetY = boss.y + Math.cos(Date.now()/400)*60;
+            }
+
+            const dx = targetX - enemy.x;
+            const dy = targetY - enemy.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+
+            if (dist > 5) {
+                enemy.x += (dx / dist) * enemy.speed;
+                enemy.y += (dy / dist) * enemy.speed;
+            }
+
+            // Self circle damage pulse
+            if (enemy.type === 'boss_twin_def' && dist < player.radius + enemy.radius) {
+                player.hp -= Math.max(0.2, 2 - (player.def * 0.05));
+            }
+
+            // Minion impact hit rules
+            if (enemy.type === 'minion' && dist < player.radius + enemy.radius) {
+                let damageTaken = Math.max(1, 15 - (player.def * 0.4));
+                player.hp -= damageTaken;
+                spawnExplosion(player.x, player.y, '#ef4444', 4);
+                enemies.splice(idx, 1); // Explodes into target vector
+                logMessage(`Hit by minion core footprint! Lost ${Math.floor(damageTaken)} HP.`);
+            }
+        });
+
+        // --- EXTENDED SYSTEM BOSS LOGIC AI ACTIONS ---
+        if (boss) {
+            boss.attackTimer++;
+            boss.actionPatternTimer++;
+
+            let currentBossSpd = boss.copiedSpd;
+            if (boss.phase === 2 && boss.mimicStat === 'SPD') currentBossSpd *= 1.8; // Dynamic Overdrive multipliers
+
+            // AI tracking calculations towards player coordinate references
+            const bdx = player.x - boss.x;
+            const bdy = player.y - boss.y;
+            const bDist = Math.sqrt(bdx*bdx + bdy*bdy);
+
+            // Execute positioning steps based on elemental type traits
+            if (boss.mimicStat === 'STR') {
+                // Highly aggressive charge logic mapping
+                if (bDist > 10) {
+                    boss.x += (bdx / bDist) * (currentBossSpd * 1.1);
+                    boss.y += (bdy / bDist) * (currentBossSpd * 1.1);
+                }
+            } else {
+                // Standard pacing hover parameters loop
+                if (bDist > 180) {
+                    boss.x += (bdx / bDist) * currentBossSpd;
+                    boss.y += (bdy / bDist) * currentBossSpd;
+                } else if (bDist < 100) {
+                    boss.x -= (bdx / bDist) * currentBossSpd;
+                    boss.y -= (bdy / bDist) * currentBossSpd;
+                }
+            }
+
+            // Keep bosses confined safely within canvas viewport constraints
+            boss.x = Math.max(boss.radius, Math.min(CANVAS_WIDTH - boss.radius, boss.x));
+            boss.y = Math.max(boss.radius, Math.min(CANVAS_HEIGHT - boss.radius, boss.y));
+
+            // Dynamic melee strike detection frames
+            if (bDist < player.radius + boss.radius) {
+                let baseMelee = 0.5;
+                if (boss.mimicStat === 'STR') baseMelee = 2.0 * boss.copiedStrMultiplier;
+                
+                player.hp -= baseMelee;
+                
+                if (boss.phase === 2 && boss.mimicStat === 'STR' && Math.random() < 0.1) {
+                    if (player.str > 5) {
+                        player.str--;
+                        boss.copiedStrMultiplier += 0.2;
+                        logMessage("⚠️ CRITICAL REAP: The Executioner strips and absorbs 1 point of your STRENGTH!");
+                    }
+                }
+            }
+
+            // --- BOSS PROJECTILE ATTACK TIMERS ---
+            let attackCooldownInterval = boss.mimicStat === 'SPD' ? 40 : 75;
+            if (boss.phase === 2) attackCooldownInterval *= 0.5; // Accelerate cadence frame updates
+
+            if (boss.attackTimer >= attackCooldownInterval) {
+                boss.attackTimer = 0;
+                const angleToPlayer = Math.atan2(bdx, bdy);
+
+                if (boss.mimicStat === 'DEF') {
+                    // Earth Shockwave Slam attacks
+                    let radScalar = 60 + (player.def * 4);
+                    if (boss.phase === 2) radScalar *= 1.6;
+                    
+                    floorHazards.push({
+                        x: boss.x, y: boss.y,
+                        radius: 10, maxRadius: radScalar,
+                        growth: 3, type: 'shockwave',
+                        color: boss.color
+                    });
+                    logMessage(`[BOSS] ${boss.name} anchors into floor arrays generating defense seismic waves!`);
+                } 
+                else if (boss.mimicStat === 'SPD') {
+                    // Water Spraying bullet cascades
+                    const sprayCount = boss.phase === 2 ? 6 : 3;
+                    for (let i = 0; i < sprayCount; i++) {
+                        const deviation = (Math.random() - 0.5) * 0.6;
+                        const angle = Math.atan2(player.y - boss.y, player.x - boss.x) + deviation;
+                        projectiles.push({
+                            x: boss.x, y: boss.y,
+                            vx: Math.cos(angle) * 4.5, vy: Math.sin(angle) * 4.5,
+                            radius: 6, damage: 12, fromPlayer: false, color: '#06b6d4'
+                        });
+                    }
+                }
+                else if (boss.mimicStat === 'STR') {
+                    // Burning Fire Trails projectiles
+                    const angle = Math.atan2(player.y - boss.y, player.x - boss.x);
+                    projectiles.push({
+                        x: boss.x, y: boss.y,
+                        vx: Math.cos(angle) * 3, vy: Math.sin(angle) * 3,
+                        radius: 9, damage: 20 * boss.copiedStrMultiplier, 
+                        fromPlayer: false, color: '#ea580c'
+                    });
+                }
+                else if (boss.mimicStat === 'ARC' || boss.mimicStat === 'ALL') {
+                    // Giant tracking storms mapping rules
+                    let stormRadius = 20 + boss.copiedArcSize;
+                    floorHazards.push({
+                        x: player.x + (Math.random()-0.5)*40,
+                        y: player.y + (Math.random()-0.5)*40,
+                        radius: stormRadius, maxRadius: stormRadius,
+                        duration: 180, type: 'storm', color: '#c084fc'
+                    });
+                }
+            }
+
+            // Phase 2 Continuous Earth Shield reflection pulsing loops
+            if (boss.phase === 2 && boss.mimicStat === 'DEF' && boss.actionPatternTimer % 90 === 0) {
+                floorHazards.push({
+                    x: boss.x, y: boss.y, radius: 5, maxRadius: 140, growth: 5, type: 'thorns_pulse', color: '#eab308'
+                });
+            }
+
+            // Phase 2 Random Mirror Mirage Spawning ticks
+            if (boss.phase === 2 && boss.mimicStat === 'SPD' && boss.actionPatternTimer % 140 === 0) {
+                enemies.push({
+                    x: boss.x, y: boss.y, radius: 10,
+                    hp: 1, maxHp: 1, speed: player.spd * 0.15,
+                    type: 'minion', color: '#22d3ee'
+                });
+            }
+
+            // Phase Check Triggers
+            if (boss.phase === 1 && boss.hp <= boss.maxHp * 0.5) {
+                triggerBossPhaseTwo();
+            }
+        }
+
+        // --- HAZARDS & ENVIRONMENTAL INFRASTRUCTURE TRACKS ---
+        floorHazards.forEach((hazard, hIdx) => {
+            if (hazard.type === 'shockwave' || hazard.type === 'thorns_pulse') {
+                hazard.radius += hazard.growth;
+                const hdx = player.x - hazard.x;
+                const hdy = player.y - hazard.y;
+                const hDist = Math.sqrt(hdx*hdx + hdy*hdy);
+
+                if (Math.abs(hDist - hazard.radius) < 8) {
+                    let mitigationFactor = hazard.type === 'thorns_pulse' ? 0.05 : 0.3;
+                    let dmg = (20 - (player.def * mitigationFactor));
+                    player.hp -= Math.max(1, dmg);
+                    spawnExplosion(player.x, player.y, '#f59e0b', 3);
+                }
+
+                if (hazard.radius >= hazard.maxRadius) {
+                    floorHazards.splice(hIdx, 1);
+                }
+            } 
+            else if (hazard.type === 'storm') {
+                hazard.duration--;
+                const hdx = player.x - hazard.x;
+                const hdy = player.y - hazard.y;
+                const hDist = Math.sqrt(hdx*hdx + hdy*hdy);
+
+                if (hDist < hazard.radius) {
+                    player.hp -= Math.max(0.1, 1.5 - (player.def * 0.04)); // Rapid ticks inside vortex systems
+                    if(Math.random() > 0.85) player.dashCooldown = Math.min(60, player.dashCooldown + 10); // Disrupt vector systems
+                }
+
+                if (hazard.duration <= 0) {
+                    floorHazards.splice(hIdx, 1);
+                }
+            }
+        });
+
+        // --- PROJECTILE MOVEMENT & SPATIAL INTERSECTION CHECKS ---
+        projectiles.forEach((proj, pIdx) => {
+            proj.x += proj.vx;
+            proj.y += proj.vy;
+
+            // Remove out-of-bound projectile units safely
+            if (proj.x < -50 || proj.x > CANVAS_WIDTH + 50 || proj.y < -50 || proj.y > CANVAS_HEIGHT + 50) {
+                projectiles.splice(pIdx, 1);
+                return;
+            }
+
+            if (proj.fromPlayer) {
+                // Check collision maps against normal layout minion arrays
+                enemies.forEach((enemy, eIdx) => {
+                    const edx = enemy.x - proj.x;
+                    const edy = enemy.y - proj.y;
+                    const eDist = Math.sqrt(edx*edx + edy*edy);
+
+                    if (eDist < enemy.radius + proj.radius) {
+                        enemy.hp -= proj.damage;
+                        spawnExplosion(proj.x, proj.y, proj.color, 4);
+                        projectiles.splice(pIdx, 1);
+
+                        if (enemy.hp <= 0) {
+                            enemies.splice(eIdx, 1);
+                            player.xp += 20;
+                            logMessage("Defeated room threat minion. Stacking XP.");
+                            checkLevelUpConditions();
+                        }
+                    }
+                });
+
+                // Check intersection maps against primary boss arrays
+                if (boss) {
+                    const bdx = boss.x - proj.x;
+                    const bdy = boss.y - proj.y;
+                    const bDist = Math.sqrt(bdx*bdx + bdy*bdy);
+
+                    if (bDist < boss.radius + proj.radius) {
+                        // Apply defense reduction math checks
+                        let rawDamage = proj.damage - boss.copiedDef;
+                        let finalDamage = Math.max(2, rawDamage);
+                        
+                        boss.hp -= finalDamage;
+                        spawnExplosion(proj.x, proj.y, '#38bdf8', 5);
+                        projectiles.splice(pIdx, 1);
+
+                        // Thorns dynamic aura feedback rules active during phase 2
+                        if (boss.phase === 2 && boss.mimicStat === 'DEF') {
+                            let thornDmg = finalDamage * 0.25;
+                            player.hp -= thornDmg;
+                            logMessage(`💥 THORNS FLARE: Took ${Math.floor(thornDmg)} reflected shock damage back!`);
+                        }
+
+                        if (boss.hp <= 0) {
+                            spawnExplosion(boss.x, boss.y, boss.color, 40);
+                            logMessage(`🏆 TRIUMPH: You have overthrown ${boss.name}!`);
+                            boss = null;
+                            switchScreen('VICTORY');
+                        }
+                    }
+                }
+            } else {
+                // Incoming tracking hostile projectile meets player intersection profiles
+                const pdx = player.x - proj.x;
+                const pdy = player.y - proj.y;
+                const pDist = Math.sqrt(pdx*pdx + pdy*pdy);
+
+                if (pDist < player.radius + proj.radius) {
+                    let calcDmg = proj.damage - (player.def * 0.3);
+                    let cleanDmg = Math.max(1, calcDmg);
+                    player.hp -= cleanDmg;
+                    
+                    spawnExplosion(proj.x, proj.y, proj.color, 6);
+                    projectiles.splice(pIdx, 1);
+                    logMessage(`Sustained hit impact! Damage: -${Math.floor(cleanDmg)} HP.`);
+                }
+            }
+        });
+
+        // --- PARTICLE PHYSICS AGING ---
+        particles.forEach((p, idx) => {
+            p.x += p.vx; p.y += p.vy;
+            p.life--;
+            if (p.life <= 0) particles.splice(idx, 1);
+        });
+
+        // Room room clearing advance triggers
+        if (enemies.length === 0 && !boss && gameState === 'PLAYING') {
+            if (currentLevel < 10) {
+                currentLevel++;
+                logMessage(`Room cleared. Moving down into Depth Level ${currentLevel}...`);
+                generateLevel();
+            }
+        }
+
+        // Defeat condition evaluations
+        if (player.hp <= 0) {
+            logMessage("💀 FATAL TRAJECTORY: Your health pools emptied. Core structural loop collapsed.");
+            document.getElementById('end-title').innerText = "The Mirror Crack'd";
+            document.getElementById('end-title').style.color = "#ef4444";
+            document.getElementById('end-desc').innerText = `You failed to survive Floor ${currentFloor}, Depth Level ${currentLevel}. Your shadow claim remains absolute.`;
+            switchScreen('END');
+        }
+
+        updateUiDisplays();
+    }
+
+    function checkLevelUpConditions() {
+        if (player.xp >= player.nextXp) {
+            player.xp -= player.nextXp;
+            essencePoints += 1;
+            player.nextXp = Math.floor(player.nextXp * 1.4);
+            logMessage("✨ LEVEL UP! Essence point accrued. Ready for deployment.");
+            spawnExplosion(player.x, player.y, '#22c55e', 15);
+        }
+    }
+
+    // --- CANVAS RENDER ENGINE GRAPHICS ---
+    function renderView() {
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        // Draw active structural floor elements background indicators
+        ctx.fillStyle = "rgba(255,255,255,0.02)";
+        ctx.font = "140px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(`F${currentFloor}`, CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + 40);
+
+        // Render floor visual hazard templates
+        floorHazards.forEach(hazard => {
+            ctx.beginPath();
+            ctx.arc(hazard.x, hazard.y, hazard.radius, 0, Math.PI * 2);
+            if (hazard.type === 'shockwave' || hazard.type === 'thorns_pulse') {
+                ctx.strokeStyle = hazard.color;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            } else if (hazard.type === 'storm') {
+                ctx.fillStyle = "rgba(192, 132, 252, 0.15)";
+                ctx.fill();
+                ctx.strokeStyle = "rgba(192, 132, 252, 0.4)";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        });
+
+        // Render project tracking bullet instances
+        projectiles.forEach(proj => {
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI * 2);
+            ctx.fillStyle = proj.color;
+            ctx.fill();
+        });
+
+        // Draw standard minion target items
+        enemies.forEach(enemy => {
+            ctx.beginPath();
+            ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+            ctx.fillStyle = enemy.color;
+            ctx.fill();
+            
+            // Health overlay tracks for micro targets
+            if (enemy.hp < enemy.maxHp) {
+                ctx.fillStyle = "#ef4444";
+                ctx.fillRect(enemy.x - 10, enemy.y - 16, 20, 3);
+                ctx.fillStyle = "#22c55e";
+                ctx.fillRect(enemy.x - 10, enemy.y - 16, (enemy.hp / enemy.maxHp) * 20, 3);
+            }
+        });
+
+        // Draw major regional bosses
+        if (boss) {
+            ctx.beginPath();
+            ctx.arc(boss.x, boss.y, boss.radius, 0, Math.PI * 2);
+            ctx.fillStyle = boss.color;
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Core elemental focal tracking indicator ring
+            ctx.beginPath();
+            ctx.arc(boss.x, boss.y, boss.radius * 0.4, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(255,255,255,0.2)";
+            ctx.fill();
+        }
+
+        // Render primary mechanical control user character node avatar
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#0284c7";
+        ctx.fill();
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Canvas overlay UI weapon targeting reticle indicator lines
+        ctx.beginPath();
+        ctx.moveTo(player.x, player.y);
+        const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+        ctx.lineTo(player.x + Math.cos(angle)*24, player.y + Math.sin(angle)*24);
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Visual FX dust processing particles loop
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+        });
+    }
+
+    // Start engine framing sequence hooks
+    tick();
+</script>
+</body>
+</html>
