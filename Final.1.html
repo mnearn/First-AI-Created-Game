@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mirror of Self</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#070912;color:#e8ecff;font-family:Inter,system-ui,Arial,sans-serif;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh;background:#0a0d18}
+  #ui{position:fixed;inset:0;pointer-events:none}
+  .panel{background:rgba(10,14,28,.9);border:1px solid #303955;border-radius:12px;box-shadow:0 10px 35px #0008}
+  #hud{position:absolute;left:16px;top:16px;width:330px;padding:12px}
+  #hud .row{display:flex;justify-content:space-between;margin:4px 0;font-size:13px}
+  .bar{height:10px;background:#171d31;border-radius:99px;overflow:hidden;margin:5px 0 8px}
+  .bar i{display:block;height:100%;width:50%;background:#e95f68}
+  #xpbar i{background:#7b8cff}
+  #abilitybar{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;gap:8px}
+  .slot{width:68px;height:68px;text-align:center;padding:6px;border:1px solid #3b4568;background:#11172a;border-radius:10px;font-size:11px}
+  .slot b{display:block;font-size:22px;margin-bottom:2px}
+  .slot small{color:#9ca7c8}
+  #bossbar{position:absolute;top:18px;left:50%;transform:translateX(-50%);width:min(620px,70vw);text-align:center;display:none}
+  #bossbar strong{font-size:18px}
+  #bossbar .bar{height:14px}
+  #bossbar i{background:#bd6cff}
+  #message{position:absolute;top:90px;left:50%;transform:translateX(-50%);padding:10px 18px;opacity:0;transition:opacity .2s;text-align:center}
+  #menu,#levelup,#reward,#end{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#050710c9;pointer-events:auto}
+  .modal{width:min(760px,92vw);max-height:88vh;overflow:auto;padding:28px;text-align:center}
+  h1{font-size:48px;letter-spacing:5px;margin:0 0 8px}
+  h2{margin:4px 0 14px}
+  .subtitle{color:#aeb8d9;margin-bottom:25px}
+  button{border:1px solid #53608c;background:#161e37;color:#edf1ff;padding:11px 16px;border-radius:8px;cursor:pointer;font-weight:700}
+  button:hover{background:#202b4c}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;text-align:left}
+  .card{padding:13px;border:1px solid #35405f;border-radius:9px;background:#10162a}
+  .card button{width:100%;margin-top:8px}
+  .stat{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #252d45}
+  .hint{font-size:12px;color:#8f9aba}
+  #controls{position:absolute;right:16px;top:16px;width:245px;padding:12px;font-size:12px;color:#aeb8d9}
+  #controls b{color:#e8ecff}
+  .hidden{display:none!important}
+  .tag{display:inline-block;padding:3px 7px;border-radius:99px;background:#202944;margin:2px;font-size:11px}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div id="hud" class="panel">
+    <div><b id="floorText">Floor 1 • Level 1/10</b></div>
+    <div class="row"><span>HP</span><span id="hpText"></span></div><div class="bar"><i id="hp"></i></div>
+    <div class="row"><span>XP</span><span id="xpText"></span></div><div class="bar" id="xpbar"><i id="xp"></i></div>
+    <div class="row"><span>Stats</span><span id="pointsText"></span></div>
+    <div class="row"><span>STR</span><span id="strText"></span></div>
+    <div class="row"><span>DEF</span><span id="defText"></span></div>
+    <div class="row"><span>SPD</span><span id="spdText"></span></div>
+    <div class="row"><span>ARC</span><span id="arcText"></span></div>
+    <div id="equipText" class="hint"></div>
+  </div>
+  <div id="controls" class="panel">
+    <b>Controls</b><br>
+    WASD / Arrows — move<br>
+    Mouse — aim<br>
+    Left click — attack<br>
+    Space — dash<br>
+    1 / 2 / 3 — abilities<br>
+    <span id="abilityHint"></span>
+  </div>
+  <div id="bossbar"><strong id="bossName"></strong><div class="bar"><i id="bossHp"></i></div></div>
+  <div id="message" class="panel"></div>
+  <div id="abilitybar">
+    <div class="slot"><b>⚔</b>Attack<br><small>Mouse</small></div>
+    <div class="slot"><b id="a1">1</b><span id="a1n">Dash</span><br><small>1</small></div>
+    <div class="slot"><b id="a2">2</b><span id="a2n">Power</span><br><small>2</small></div>
+    <div class="slot"><b id="a3">3</b><span id="a3n">Power</span><br><small>3</small></div>
+  </div>
+
+  <div id="menu">
+    <div class="modal panel">
+      <h1>MIRROR OF SELF</h1>
+      <div class="subtitle">Five aspects. Five elements. One reflection.</div>
+      <p>You descend through five floors, each containing ten levels. Defeat enemies, allocate permanent stat points, claim randomized boss equipment, and confront a final Mirror that uses your own build against you.</p>
+      <p class="hint">The Mirror copies every ability you possess at 75% effectiveness and can wield every defeated boss's power — but it does not copy boss equipment.</p>
+      <button id="startBtn">BEGIN THE DESCENT</button>
+    </div>
+  </div>
+
+  <div id="levelup" class="hidden">
+    <div class="modal panel">
+      <h2>Allocate Your Essence</h2>
+      <p>You have <b id="levelPoints"></b> stat point(s). These points are permanent and follow you into the Mirror.</p>
+      <div id="stats"></div>
+      <button id="continueBtn">Continue</button>
+    </div>
+  </div>
+
+  <div id="reward" class="hidden">
+    <div class="modal panel">
+      <h2 id="rewardTitle">Aspect Defeated</h2>
+      <p id="rewardDesc"></p>
+      <div class="grid" id="rewardGrid"></div>
+      <button id="rewardContinue" class="hidden">Continue</button>
+    </div>
+  </div>
+
+  <div id="end" class="hidden">
+    <div class="modal panel">
+      <h1 id="endTitle">THE MIRROR</h1>
+      <p id="endText"></p>
+      <button onclick="location.reload()">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
+let W,H,dpr=1;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener("resize",resize);resize();
+
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rand=(a,b)=>Math.random()*(b-a)+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const keys={}; addEventListener("keydown",e=>{keys[e.key.toLowerCase()]=true;if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(e.key.toLowerCase()))e.preventDefault();});
+addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+const mouse={x:W/2,y:H/2,down:false}; canvas.addEventListener("mousemove",e=>{mouse.x=e.clientX;mouse.y=e.clientY}); canvas.addEventListener("mousedown",e=>{if(e.button===0)mouse.down=true}); canvas.addEventListener("mouseup",e=>{if(e.button===0)mouse.down=false});
+
+const aspects=[
+ {name:"FIRE",element:"Fire",color:"#ff5b48",mind:"Passion / Rage",boss:"Emberheart",ability:"Flame Burst"},
+ {name:"WATER",element:"Water",color:"#42bfff",mind:"Emotion / Adaptability",boss:"Tideborn",ability:"Tidal Wave"},
+ {name:"EARTH",element:"Earth",color:"#b4935a",mind:"Resolve / Stability",boss:"Stonewrought",ability:"Fault Line"},
+ {name:"AIR",element:"Air",color:"#b7efff",mind:"Freedom / Thought",boss:"Skybound",ability:"Cyclone"},
+ {name:"NULL",element:"Null",color:"#b96cff",mind:"Emptiness / Unknown",boss:"Nullshade",ability:"Void Pulse"}
+];
+const equipment=[
+ ["Crown of Cinders","headgear","STR +3, ARC +2"],
+ ["Tide Circlet","headgear","HP +25, ARC +2"],
+ ["Stone Helm","headgear","DEF +4"],
+ ["Gale Hood","headgear","SPD +3"],
+ ["Null Halo","headgear","ARC +4"],
+ ["Ember Edge","weapon","STR +5"],
+ ["Tide Scepter","weapon","ARC +5"],
+ ["Faultbreaker","weapon","STR +3, DEF +3"],
+ ["Skyblade","weapon","SPD +4, STR +2"],
+ ["Null Fang","weapon","ARC +6"],
+ ["Cinderplate","armor","DEF +5"],
+ ["Tideweave","armor","HP +35"],
+ ["Stone Shell","armor","DEF +7, SPD -1"],
+ ["Cloudmail","armor","SPD +4"],
+ ["Null Mantle","armor","ARC +5, DEF +2"],
+ ["Ash Treads","treads","SPD +4"],
+ ["Current Boots","treads","SPD +2, HP +20"],
+ ["Quake Greaves","treads","DEF +4"],
+ ["Windstep Treads","treads","SPD +6"],
+ ["Voidwalkers","treads","ARC +3, SPD +3"]
+];
+
+let state,particles=[],projectiles=[],enemies=[],roomsCleared=0,last=0,gameRunning=false;
+
+function newState(){
+ return {
+  floor:1,level:1,points:0,xp:0,nextXP:40,
+  stats:{str:5,def:5,spd:5,arc:5},
+  equip:[],abilities:["Dash","Power Shot"],
+  bossPowers:[],cool:{attack:0,dash:0,a1:0,a2:0,a3:0},
+  player:{x:W/2,y:H/2,r:15,hp:120,maxhp:120,inv:0,face:0},
+  boss:null,paused:false,mode:"normal",score:0
+ };
+}
+function effective(){
+ let e={str:state.stats.str,def:state.stats.def,spd:state.stats.spd,arc:state.stats.arc,hp:120};
+ for(const q of state.equip){
+   if(q.name.includes("Cinderplate"))e.def+=5;
+   if(q.name.includes("Stone Shell")){e.def+=7;e.spd-=1}
+   if(q.name.includes("Null Mantle")){e.arc+=5;e.def+=2}
+   if(q.name.includes("Tideweave"))e.hp+=35;
+   if(q.name.includes("Current Boots")){e.spd+=2;e.hp+=20}
+   if(q.name.includes("Quake Greaves"))e.def+=4;
+   if(q.name.includes("Cloudmail"))e.spd+=4;
+   if(q.name.includes("Windstep"))e.spd+=6;
+   if(q.name.includes("Voidwalkers")){e.arc+=3;e.spd+=3}
+   if(q.name.includes("Ash Treads"))e.spd+=4;
+   if(q.name.includes("Crown")){e.str+=3;e.arc+=2}
+   if(q.name.includes("Circlet")){e.hp+=25;e.arc+=2}
+   if(q.name.includes("Stone Helm"))e.def+=4;
+   if(q.name.includes("Gale Hood"))e.spd+=3;
+   if(q.name.includes("Halo"))e.arc+=4;
+   if(q.name.includes("Ember Edge"))e.str+=5;
+   if(q.name.includes("Scepter"))e.arc+=5;
+   if(q.name.includes("Faultbreaker")){e.str+=3;e.def+=3}
+   if(q.name.includes("Skyblade")){e.spd+=4;e.str+=2}
+   if(q.name.includes("Fang"))e.arc+=6;
+ }
+ return e;
+}
+function showMessage(t,ms=1600){const m=document.getElementById("message");m.textContent=t;m.style.opacity=1;clearTimeout(showMessage.t);showMessage.t=setTimeout(()=>m.style.opacity=0,ms)}
+function addXP(n){
+ state.xp+=n;
+ if(state.xp>=state.nextXP){state.xp-=state.nextXP;state.nextXP=Math.floor(state.nextXP*1.28);state.points++;openLevelUp()}
+}
+function openLevelUp(){
+ state.paused=true;
+ document.getElementById("levelPoints").textContent=state.points;
+ renderStats();
+ document.getElementById("levelup").classList.remove("hidden");
+}
+function renderStats(){
+ const box=document.getElementById("stats");
+ const labels=[["str","Strength","Damage"],["def","Defense","Reduces damage"],["spd","Speed","Movement & cooldowns"],["arc","Arcana","Ability power"]];
+ box.innerHTML=labels.map(([k,n,d])=>`<div class="stat"><span><b>${n}</b><br><span class="hint">${d}</span></span><span>${state.stats[k]} <button onclick="spend('${k}')">+</button></span></div>`).join("");
+}
+window.spend=k=>{if(state.points>0){state.points--;state.stats[k]++;document.getElementById("levelPoints").textContent=state.points;renderStats();updateHUD()}};
+document.getElementById("continueBtn").onclick=()=>{document.getElementById("levelup").classList.add("hidden");state.paused=false;spawnLevel()};
+document.getElementById("startBtn").onclick=()=>{document.getElementById("menu").classList.add("hidden");startGame()};
+
+function startGame(){state=newState();gameRunning=true;spawnLevel();showMessage("The descent begins.",1600);requestAnimationFrame(loop)}
+function spawnLevel(){
+ enemies=[];projectiles=[];state.boss=null;document.getElementById("bossbar").style.display="none";
+ state.player.x=W/2;state.player.y=H/2;state.player.hp=Math.min(state.player.hp,effective().hp);state.player.maxhp=effective().hp;
+ if(state.level===5) spawnBoss(state.floor-1,true);
+ else if(state.level===10) spawnBoss(state.floor-1,false);
+ else {
+   const count=5+state.floor*2+Math.floor(state.level/2);
+   for(let i=0;i<count;i++)spawnEnemy();
+ }
+ updateHUD();
+}
+function spawnEnemy(){
+ const types=["chaser","shooter","tank"];let type=pick(types);
+ const side=Math.floor(rand(0,4)), pad=60;
+ let x=side===0?rand(pad,W-pad):(side===1?rand(pad,W-pad):(side===2?pad:W-pad));
+ let y=side===0?pad:(side===1?H-pad:rand(pad,H-pad));
+ enemies.push({x,y,r:type==="tank"?19:13,hp:(type==="tank"?70:35)+state.floor*10+state.level*3,maxhp:(type==="tank"?70:35)+state.floor*10+state.level*3,type,cd:0.5,hit:0});
+}
+function spawnBoss(idx,mini){
+ const a=aspects[idx];
+ const scale=mini?.75:1.25;
+ state.boss={x:W/2,y:120,r:mini?27:36,hp:mini?400:750,maxhp:mini?400:750,name:(mini?"Mini ":"")+a.boss,aspect:a,cd:0.7,hit:0,phase:0};
+ state.boss.hp*=2+(state.floor-1)*.50;
+ state.boss.maxhp=state.boss.hp;
+ document.getElementById("bossbar").style.display="block";
+ showMessage(`${mini?"MINI-BOSS":"ASPECT"}: ${a.boss} — ${a.mind}`,2200);
+}
+function enemyShoot(e,speed=300){
+ const ang=Math.atan2(state.player.y-e.y,state.player.x-e.x);
+ projectiles.push({x:e.x,y:e.y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,r:5,damage:8+state.floor*2,life:3,enemy:true,color:"#e86b83"});
+}
+function shootAt(x,y,damage,spd,color="#e9efff",pierce=false){
+ const ang=Math.atan2(y-state.player.y,x-state.player.x);
+ projectiles.push({x:state.player.x,y:state.player.y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,r:5,damage,pierce,life:2,color});
+}
+function playerAttack(){
+ if(state.cool.attack>0)return;
+ const e=effective(), dmg=9+e.str*1.8+e.arc*.35;
+ shootAt(mouse.x,mouse.y,dmg,560,"#e9efff");
+ state.cool.attack=.22;
+}
+function ability(n){
+ const e=effective();
+ if(n===1 && state.cool.a1<=0){
+   state.player.inv=.45;state.cool.a1=Math.max(.8,2.5-e.spd*.04);
+   const ang=Math.atan2(mouse.y-state.player.y,mouse.x-state.player.x);
+   state.player.x=clamp(state.player.x+Math.cos(ang)*100,35,W-35);
+   state.player.y=clamp(state.player.y+Math.sin(ang)*100,35,H-35);
+   burst(state.player.x,state.player.y,"#9aa9ff",16);return;
+ }
+ if(n===2 && state.cool.a2<=0){
+   state.cool.a2=Math.max(1.2,4-e.arc*.08);
+   const a=state.abilities[1]||"Power Shot";
+   if(a==="Flame Burst")fireRing(e.arc*5+30,"#ff5b48");
+   else if(a==="Tidal Wave")wave(140,e.arc*2+25,"#42bfff");
+   else if(a==="Fault Line")fault();
+   else if(a==="Cyclone")cyclone();
+   else if(a==="Void Pulse")voidPulse();
+   else shootAt(mouse.x,mouse.y,35+e.arc*4,800,"#9aa9ff",true);
+ }
+ if(n===3 && state.cool.a3<=0 && state.abilities[2]){
+   state.cool.a3=Math.max(2,5-e.arc*.1);
+   useAbility(state.abilities[2]);
+ }
+}
+function useAbility(a){
+ const e=effective();
+ if(a==="Flame Burst")fireRing(e.arc*4+25,"#ff5b48");
+ else if(a==="Tidal Wave")wave(170,e.arc*1.7+20,"#42bfff");
+ else if(a==="Fault Line")fault();
+ else if(a==="Cyclone")cyclone();
+ else if(a==="Void Pulse")voidPulse();
+}
+function fireRing(dmg,color){
+ for(let i=0;i<14;i++){let a=i*Math.PI*2/14;projectiles.push({x:state.player.x,y:state.player.y,vx:Math.cos(a)*360,vy:Math.sin(a)*360,r:8,damage:dmg,life:1.2,color,pierce:true})}
+ burst(state.player.x,state.player.y,color,28);
+}
+function wave(r,damage,color){
+ for(const en of enemies)if(Math.hypot(en.x-state.player.x,en.y-state.player.y)<r)damageEnemy(en,damage);
+ if(state.boss&&Math.hypot(state.boss.x-state.player.x,state.boss.y-state.player.y)<r)damageBoss(damage);
+ burst(state.player.x,state.player.y,color,34);
+}
+function fault(){for(const en of enemies)if(Math.abs(en.x-state.player.x)<170)damageEnemy(en,30+effective().arc*3);if(state.boss&&Math.abs(state.boss.x-state.player.x)<170)damageBoss(40+effective().arc*3);burst(state.player.x,state.player.y,"#b4935a",22)}
+function cyclone(){for(const en of enemies){let d=dist(en,state.player);if(d<190){en.x+=(state.player.x-en.x)*.08;en.y+=(state.player.y-en.y)*.08;damageEnemy(en,4+effective().arc)}}}
+function voidPulse(){for(const en of enemies)if(dist(en,state.player)<230)damageEnemy(en,45+effective().arc*4);if(state.boss&&dist(state.boss,state.player)<230)damageBoss(60+effective().arc*4);burst(state.player.x,state.player.y,"#b96cff",38)}
+function burst(x,y,color,n){for(let i=0;i<n;i++){let a=rand(0,Math.PI*2),s=rand(40,250);particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.3,.8),color,r:rand(2,5)})}}
+
+function damageEnemy(e,d){e.hp-=d;e.hit=.1;burst(e.x,e.y,"#ffffff",3);if(e.hp<=0){addXP(7+state.floor*2);state.score++;return true}return false}
+function damageBoss(d){if(!state.boss)return;state.boss.hp-=d;state.boss.hit=.1;if(state.boss.hp<=0)bossDefeated()}
+
+function bossDefeated(){
+ const idx=state.floor-1, a=aspects[idx];
+ if(state.level===5){showMessage(`${a.boss} falls. The path remains.`,1800);state.boss=null;document.getElementById("bossbar").style.display="none";state.level++;spawnLevel();return}
+ state.boss=null;document.getElementById("bossbar").style.display="none";
+ showReward(a);
+}
+function showReward(a){
+ state.paused=true;
+ document.getElementById("rewardTitle").textContent=`${a.name} ASPECT DEFEATED`;
+ document.getElementById("rewardDesc").textContent=`The ${a.element} aspect yields its power. Choose one random piece of equipment from its domain. Its signature ability is also learned.`;
+ const grid=document.getElementById("rewardGrid");grid.innerHTML="";
+ const options=equipment.filter(x=>x[0].toLowerCase().includes(a.element.toLowerCase().slice(0,3))||true).sort(()=>Math.random()-.5).slice(0,4);
+ // Restrict choices to one item per equipment category, randomly selected from the full equipment pool.
+ const cats=["headgear","weapon","armor","treads"].sort(()=>Math.random()-.5);
+ const chosen=cats.map(cat=>pick(equipment.filter(x=>x[1]===cat)));
+ chosen.forEach(q=>{const d=document.createElement("div");d.className="card";d.innerHTML=`<b>${q[0]}</b><div class="tag">${q[1]}</div><p>${q[2]}</p><button>Equip</button>`;d.querySelector("button").onclick=()=>{state.equip.push({name:q[0],type:q[1],desc:q[2]});if(!state.abilities.includes(a.ability))state.abilities.push(a.ability);document.getElementById("reward").classList.add("hidden");state.paused=false;state.floor++;state.level=1;showMessage(`${q[0]} equipped. ${a.ability} learned.`,2000);spawnLevel();};grid.appendChild(d)});
+ document.getElementById("reward").classList.remove("hidden");
+}
+function endRun(win){
+ state.paused=true;document.getElementById("end").classList.remove("hidden");
+ document.getElementById("endTitle").textContent=win?"MIRROR OF SELF":"THE MIRROR REMAINS";
+ document.getElementById("endText").innerHTML=win?`You defeated yourself.<br><br>Your final build: STR ${effective().str}, DEF ${effective().def}, SPD ${effective().spd}, ARC ${effective().arc}.<br><br>The reflection had every one of your abilities at 75% effectiveness, your current stats and your normal equipment — but none of the boss equipment you earned.`:`The reflection overcame you. Every permanent point you invested made it stronger.`;
+}
+
+function spawnMirror(){
+ state.mode="mirror";state.boss={x:W/2,y:130,r:38,hp:effective().hp*2.2,maxhp:effective().hp*2.2,name:"THE MIRROR",aspect:{color:"#dce4ff",ability:"Mirror"},cd:1,hit:0};
+ document.getElementById("bossbar").style.display="block";document.getElementById("bossName").textContent="THE MIRROR";
+ showMessage("It has your stats. Your equipment. Every ability. 75% of your power.",3000);
+}
+function mirrorAttack(){
+ const e=effective(),p=state.player,b=state.boss;
+ if(b.cd<=0){
+   b.cd=Math.max(.5,1.4-e.spd*.025);
+   const abilities=state.abilities;
+   const a=pick(abilities);
+   const factor=.75;
+   if(a==="Dash"){b.x+=Math.cos(Math.atan2(p.y-b.y,p.x-b.x))*90;b.y+=Math.sin(Math.atan2(p.y-b.y,p.x-b.x))*90;burst(b.x,b.y,"#dce4ff",12)}
+   else if(a==="Power Shot")mirrorShot(1,factor);
+   else if(a==="Flame Burst")mirrorRing(factor,"#ff5b48");
+   else if(a==="Tidal Wave")mirrorWave(factor,"#42bfff");
+   else if(a==="Fault Line")mirrorLine(factor,"#b4935a");
+   else if(a==="Cyclone")mirrorCyclone(factor);
+   else if(a==="Void Pulse")mirrorVoid(factor);
+ }
+}
+function mirrorShot(f=1){const ang=Math.atan2(state.player.y-state.boss.y,state.player.x-state.boss.x);projectiles.push({x:state.boss.x,y:state.boss.y,vx:Math.cos(ang)*620,vy:Math.sin(ang)*620,r:6,damage:(9+effective().str*1.8+effective().arc*.35)*f,life:2,enemy:true,color:"#dce4ff"})}
+function mirrorRing(f,c){for(let i=0;i<12;i++){let a=i*Math.PI*2/12;projectiles.push({x:state.boss.x,y:state.boss.y,vx:Math.cos(a)*350,vy:Math.sin(a)*350,r:8,damage:(20+effective().arc*4)*f,life:1.4,enemy:true,color:c})}}
+function mirrorWave(f,c){if(dist(state.boss,state.player)<190)hurtPlayer((35+effective().arc*2)*f);burst(state.boss.x,state.boss.y,c,24)}
+function mirrorLine(f,c){if(Math.abs(state.player.x-state.boss.x)<150)hurtPlayer((35+effective().arc*2)*f);burst(state.boss.x,state.boss.y,c,20)}
+function mirrorCyclone(f){if(dist(state.boss,state.player)<180)hurtPlayer((12+effective().arc)*f)}
+function mirrorVoid(f){if(dist(state.boss,state.player)<220)hurtPlayer((50+effective().arc*3)*f);burst(state.boss.x,state.boss.y,"#b96cff",28)}
+
+function hurtPlayer(d){
+ if(state.player.inv>0)return;
+ const e=effective(), actual=Math.max(1,d*(100/(100+e.def*5)));
+ state.player.hp-=actual;state.player.inv=.35;burst(state.player.x,state.player.y,"#e95f68",8);
+ if(state.player.hp<=0)endRun(false);
+}
+function update(dt){
+ if(!gameRunning||state.paused)return;
+ const p=state.player,e=effective();
+ state.cool.attack=Math.max(0,state.cool.attack-dt);state.cool.a1=Math.max(0,state.cool.a1-dt);state.cool.a2=Math.max(0,state.cool.a2-dt);state.cool.a3=Math.max(0,state.cool.a3-dt);
+ p.inv=Math.max(0,p.inv-dt);
+ let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);
+ const len=Math.hypot(dx,dy)||1;let speed=95+e.spd*8;p.x=clamp(p.x+dx/len*speed*dt,28,W-28);p.y=clamp(p.y+dy/len*speed*dt,28,H-28);
+ if(mouse.down)playerAttack();
+ if(keys["1"]){ability(1);keys["1"]=false}if(keys["2"]){ability(2);keys["2"]=false}if(keys["3"]){ability(3);keys["3"]=false}if(keys[" "]){ability(1);keys[" "]=false}
+ for(const en of enemies){
+   en.cd-=dt;en.hit=Math.max(0,en.hit-dt);
+   const ang=Math.atan2(p.y-en.y,p.x-en.x),d=dist(en,p);
+   if(en.type==="shooter"){if(d>230){en.x+=Math.cos(ang)*35*dt;en.y+=Math.sin(ang)*35*dt}else if(d<180){en.x-=Math.cos(ang)*25*dt;en.y-=Math.sin(ang)*25*dt}if(en.cd<=0){enemyShoot(en);en.cd=1.7}}
+   else {let s=en.type==="tank"?30:52;en.x+=Math.cos(ang)*s*dt;en.y+=Math.sin(ang)*s*dt;if(d<en.r+p.r+4)hurtPlayer(en.type==="tank"?15:9)}
+ }
+ enemies=enemies.filter(e=>e.hp>0);
+ if(state.boss){
+   state.boss.cd-=dt;state.boss.hit=Math.max(0,state.boss.hit-dt);
+   if(state.mode==="mirror")mirrorAttack(); else bossAI(state.boss,dt);
+   if(dist(state.boss,p)<state.boss.r+p.r+6)hurtPlayer(18+state.floor*2);
+ }
+ for(const q of projectiles){
+   q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;
+   if(q.enemy){if(Math.hypot(q.x-p.x,q.y-p.y)<q.r+p.r) {hurtPlayer(q.damage);q.life=0}}
+   else {
+     for(const en of enemies)if(Math.hypot(q.x-en.x,q.y-en.y)<q.r+en.r){if(damageEnemy(en,q.damage))en.dead=true;if(!q.pierce)q.life=0;break}
+     if(state.boss&&Math.hypot(q.x-state.boss.x,q.y-state.boss.y)<q.r+state.boss.r){damageBoss(q.damage);if(!q.pierce)q.life=0}
+   }
+ }
+ projectiles=projectiles.filter(q=>q.life>0&&q.x>-50&&q.x<W+50&&q.y>-50&&q.y<H+50);
+ for(const q of particles){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;q.vx*=.97;q.vy*=.97}
+ particles=particles.filter(q=>q.life>0);
+ if(!state.boss&&enemies.length===0){
+   roomsCleared++;
+   if(state.level<10){state.level++;if(Math.random()<.55)addXP(12);spawnLevel();showMessage(`Level ${state.level-1} cleared.`,900)}
+   else if(state.floor<5){state.level=10;spawnLevel()} // safety
+   else {spawnMirror()}
+ }
+ updateHUD();
+}
+function bossAI(b,dt){
+ const p=state.player,a=b.aspect,ang=Math.atan2(p.y-b.y,p.x-b.x);
+ let s=42+state.floor*5;b.x+=Math.cos(ang)*s*dt;b.y+=Math.sin(ang)*s*dt;
+ if(b.cd<=0){
+   b.cd=Math.max(.65,1.5-state.floor*.1);
+   if(a.ability==="Flame Burst")for(let i=0;i<10;i++){let z=i*Math.PI*2/10;projectiles.push({x:b.x,y:b.y,vx:Math.cos(z)*300,vy:Math.sin(z)*300,r:7,damage:13,life:1.7,enemy:true,color:a.color})}
+   if(a.ability==="Tidal Wave")mirrorWave(.65,a.color);
+   if(a.ability==="Fault Line")mirrorLine(.7,a.color);
+   if(a.ability==="Cyclone")mirrorCyclone(.7);
+   if(a.ability==="Void Pulse")mirrorVoid(.65);
+ }
+}
+function updateHUD(){
+ if(!state)return;const e=effective(),p=state.player;
+ document.getElementById("floorText").textContent=state.mode==="mirror"?"FINAL FLOOR • MIRROR":"Floor "+state.floor+" • Level "+state.level+"/10";
+ document.getElementById("hpText").textContent=`${Math.ceil(p.hp)} / ${Math.ceil(p.maxhp)}`;document.getElementById("hp").style.width=clamp(p.hp/p.maxhp*100,0,100)+"%";
+ document.getElementById("xpText").textContent=`${state.xp} / ${state.nextXP}`;document.getElementById("xp").style.width=clamp(state.xp/state.nextXP*100,0,100)+"%";
+ document.getElementById("pointsText").textContent=state.points;
+ document.getElementById("strText").textContent=e.str;document.getElementById("defText").textContent=e.def;document.getElementById("spdText").textContent=e.spd;document.getElementById("arcText").textContent=e.arc;
+ document.getElementById("equipText").innerHTML=state.equip.length?state.equip.map(x=>`<span class="tag">${x.name}</span>`).join(" "):"No boss equipment yet";
+ document.getElementById("a1n").textContent=state.abilities[0]||"Dash";document.getElementById("a2n").textContent=state.abilities[1]||"Power";document.getElementById("a3n").textContent=state.abilities[2]||"—";
+ if(state.boss){document.getElementById("bossName").textContent=state.boss.name;document.getElementById("bossHp").style.width=clamp(state.boss.hp/state.boss.maxhp*100,0,100)+"%"}
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ // geometric arena
+ ctx.fillStyle="#0b1020";ctx.fillRect(0,0,W,H);
+ ctx.strokeStyle="#131a2d";ctx.lineWidth=1;
+ for(let x=0;x<W;x+=48){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+ for(let y=0;y<H;y+=48){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ ctx.strokeStyle="#27314d";ctx.lineWidth=2;ctx.strokeRect(22,22,W-44,H-44);
+ for(const q of particles){ctx.globalAlpha=clamp(q.life*2,0,1);ctx.fillStyle=q.color;ctx.beginPath();ctx.arc(q.x,q.y,q.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
+ for(const q of projectiles){ctx.fillStyle=q.color;ctx.beginPath();ctx.arc(q.x,q.y,q.r,0,Math.PI*2);ctx.fill()}
+ for(const e of enemies)drawEnemy(e);
+ if(state?.boss)drawBoss(state.boss);
+ if(state)drawPlayer(state.player);
+}
+function drawPlayer(p){
+ ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.atan2(mouse.y-p.y,mouse.x-p.x));
+ ctx.globalAlpha=p.inv>0?.55:1;ctx.fillStyle="#e9efff";ctx.beginPath();ctx.arc(0,0,p.r,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#7b8cff";ctx.beginPath();ctx.moveTo(18,0);ctx.lineTo(3,-7);ctx.lineTo(3,7);ctx.closePath();ctx.fill();
+ ctx.restore();ctx.globalAlpha=1;
+}
+function drawEnemy(e){
+ ctx.fillStyle=e.hit>0?"#fff":e.type==="tank"?"#8c7654":e.type==="shooter"?"#c35d8e":"#d34e62";
+ ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#20263b";ctx.fillRect(e.x-e.r,e.y-e.r-7,e.r*2,3);ctx.fillStyle="#70d38a";ctx.fillRect(e.x-e.r,e.y-e.r-7,e.r*2*clamp(e.hp/e.maxhp,0,1),3);
+}
+function drawBoss(b){
+ ctx.save();ctx.translate(b.x,b.y);ctx.rotate(performance.now()/1300);
+ ctx.fillStyle=b.hit>0?"#fff":b.aspect.color;ctx.beginPath();ctx.moveTo(0,-b.r);for(let i=1;i<8;i++){let a=i*Math.PI*2/7;ctx.lineTo(Math.cos(a)*b.r,Math.sin(a)*b.r)}ctx.closePath();ctx.fill();
+ ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();ctx.restore();
+}
+function loop(t){const dt=Math.min(.033,(t-last)/1000||0);last=t;update(dt);draw();requestAnimationFrame(loop)}
+</script>
+</body>
+</html>
