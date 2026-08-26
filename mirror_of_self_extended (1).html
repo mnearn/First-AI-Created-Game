@@ -390,7 +390,7 @@
         str: 10, def: 10, spd: 10, arc: 10,
         xp: 0, nextXp: 100,
         dashCooldown: 0, dashTimer: 0, dashVx: 0, dashVy: 0,
-        abilityCooldowns:, // Expanded to 4 slots to accommodate Boss Soul Ability
+        abilityCooldowns; // Expanded to 4 slots to accommodate Boss Soul Ability
         unlockedBossAbilities: []        // Stores strings of defeated boss types: 'DEF', 'SPD', 'STR', 'ARC'
     };
 
@@ -680,7 +680,7 @@
         });
     }
 
-    function handleAbilityPress(key) {
+        function handleAbilityPress(key) {
         if (gameState !== 'PLAYING') return;
 
         if (key === '1' && player.abilityCooldowns[0] <= 0) {
@@ -717,7 +717,7 @@
             player.hp = Math.min(player.baseHp, player.hp + (player.arc * 1.2)); // Minor arcane mend heal
             player.abilityCooldowns[2] = 480; // 8 seconds
         }
-                else if (key === '4' && player.abilityCooldowns[3] <= 0) {
+        else if (key === '4' && player.abilityCooldowns[3] <= 0) {
             if (player.unlockedBossAbilities.length === 0) {
                 logMessage("❌ SOULLESS: You have not conquered any elemental aspects yet.");
                 return;
@@ -729,7 +729,6 @@
             if (activeSkill === 'DEF') {
                 // BOSS 1 EFFECT: Kinetic Earth Shield
                 logMessage("🔮 Boss Skill: Earth Sentinel Armor Active (+30 DEF!)");
-                const oldDef = player.def;
                 player.def += 30; // Massive defense bolster
                 spawnExplosion(player.x, player.y, '#ca8a04', 12);
                 
@@ -758,9 +757,7 @@
                 floorHazards.push({
                     x: player.x, y: player.y, radius: 10, maxRadius: 120, growth: 4, type: 'shockwave', color: '#f97316'
                 });
-                // Note: The main loop automatically checks shockwave hazards against enemies if we flag them, 
-                // but since standard shockwaves check player targets in your code, we flag this as a visual burst 
-                // that deals 40 + str * 2 flat burst damage to all active enemies in range instantly:
+                
                 enemies.forEach(enemy => {
                     let edx = enemy.x - player.x; let edy = enemy.y - player.y;
                     let edist = Math.sqrt(edx*edx + edy*edy);
@@ -769,6 +766,15 @@
                         spawnExplosion(enemy.x, enemy.y, '#f97316', 5);
                     }
                 });
+
+                if (boss) {
+                    let bdx = boss.x - player.x; let bdy = boss.y - player.y;
+                    let bdist = Math.sqrt(bdx*bdx + bdy*bdy);
+                    if (bdist <= 120) {
+                        boss.hp -= Math.max(2, (40 + (player.str * 2)) - boss.copiedDef);
+                        spawnExplosion(boss.x, boss.y, '#f97316', 8);
+                    }
+                }
                 player.abilityCooldowns[3] = 480; // 8 Second Cooldown
             }
             else if (activeSkill === 'ARC') {
@@ -794,7 +800,6 @@
                 logMessage(`🔄 Skill cycled! Next up: Aspect [${player.unlockedBossAbilities[0]}]`);
             }
         }
-
     }
 
     function spawnExplosion(x, y, color, count=10) {
