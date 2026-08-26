@@ -313,12 +313,13 @@
 
             <div class="panel">
                 <div class="panel-title">Controls</div>
-                <ul class="controls-list">
+              <ul class="controls-list">
                     <li><span>Move</span><span class="control-key">WASD</span></li>
                     <li><span>Aim</span><span class="control-key">Mouse</span></li>
                     <li><span>Attack</span><span class="control-key">Left Click</span></li>
                     <li><span>Dash</span><span class="control-key">Space</span></li>
                     <li><span>Abilities</span><span class="control-key">1 / 2 / 3</span></li>
+                    <li><span style="color:#a855f7; font-weight:bold;">Boss Skill</span><span class="control-key" style="background-color:#581c87; color:#f3e8ff;">4</span></li>
                 </ul>
             </div>
         </aside>
@@ -382,13 +383,15 @@
     let essencePoints = 0;
 
     // Player Stats Configuration
+    // Player Stats Configuration
     let player = {
         x: 100, y: 200, radius: 12,
         baseHp: 100, hp: 100,
         str: 10, def: 10, spd: 10, arc: 10,
         xp: 0, nextXp: 100,
         dashCooldown: 0, dashTimer: 0, dashVx: 0, dashVy: 0,
-        abilityCooldowns: [0, 0, 0]
+        abilityCooldowns:, // Expanded to 4 slots to accommodate Boss Soul Ability
+        unlockedBossAbilities: []        // Stores strings of defeated boss types: 'DEF', 'SPD', 'STR', 'ARC'
     };
 
     // Input States
@@ -714,6 +717,84 @@
             player.hp = Math.min(player.baseHp, player.hp + (player.arc * 1.2)); // Minor arcane mend heal
             player.abilityCooldowns[2] = 480; // 8 seconds
         }
+                else if (key === '4' && player.abilityCooldowns[3] <= 0) {
+            if (player.unlockedBossAbilities.length === 0) {
+                logMessage("❌ SOULLESS: You have not conquered any elemental aspects yet.");
+                return;
+            }
+
+            // Select active skill power (Cycles automatically if you have unlocked multiple)
+            const activeSkill = player.unlockedBossAbilities[0];
+
+            if (activeSkill === 'DEF') {
+                // BOSS 1 EFFECT: Kinetic Earth Shield
+                logMessage("🔮 Boss Skill: Earth Sentinel Armor Active (+30 DEF!)");
+                const oldDef = player.def;
+                player.def += 30; // Massive defense bolster
+                spawnExplosion(player.x, player.y, '#ca8a04', 12);
+                
+                // Remove bonus armor tracking parameters cleanly after 3 seconds (180 frames)
+                setTimeout(() => { player.def -= 30; logMessage("🛡️ Shield dissipated."); }, 3000);
+                player.abilityCooldowns[3] = 420; // 7 Second Cooldown
+            }
+            else if (activeSkill === 'SPD') {
+                // BOSS 2 EFFECT: Torrential Spray
+                logMessage("🔮 Boss Skill: Torrential Water Spray unleashed!");
+                for (let i = 0; i < 8; i++) {
+                    const deviation = (Math.random() - 0.5) * 0.8;
+                    const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x) + deviation;
+                    projectiles.push({
+                        x: player.x, y: player.y,
+                        vx: Math.cos(angle) * 6.5, vy: Math.sin(angle) * 6.5,
+                        radius: 5, damage: 8 + (player.spd * 0.5),
+                        fromPlayer: true, color: '#00ffff'
+                    });
+                }
+                player.abilityCooldowns[3] = 300; // 5 Second Cooldown
+            }
+            else if (activeSkill === 'STR') {
+                // BOSS 3 EFFECT: Molten Fire Trail Slam
+                logMessage("🔮 Boss Skill: Molten Flame Core ignited!");
+                floorHazards.push({
+                    x: player.x, y: player.y, radius: 10, maxRadius: 120, growth: 4, type: 'shockwave', color: '#f97316'
+                });
+                // Note: The main loop automatically checks shockwave hazards against enemies if we flag them, 
+                // but since standard shockwaves check player targets in your code, we flag this as a visual burst 
+                // that deals 40 + str * 2 flat burst damage to all active enemies in range instantly:
+                enemies.forEach(enemy => {
+                    let edx = enemy.x - player.x; let edy = enemy.y - player.y;
+                    let edist = Math.sqrt(edx*edx + edy*edy);
+                    if (edist <= 120) {
+                        enemy.hp -= (40 + (player.str * 2));
+                        spawnExplosion(enemy.x, enemy.y, '#f97316', 5);
+                    }
+                });
+                player.abilityCooldowns[3] = 480; // 8 Second Cooldown
+            }
+            else if (activeSkill === 'ARC') {
+                // BOSS 4 EFFECT: Spatial Anomaly Storm vortex placement
+                logMessage("🔮 Boss Skill: Conjured Arcane Singularity Vortex!");
+                floorHazards.push({
+                    x: mouse.x, y: mouse.y, radius: 45, maxRadius: 45, duration: 240, type: 'player_storm', color: '#a855f7'
+                });
+                player.abilityCooldowns[3] = 600; // 10 Second Cooldown
+            }
+            else if (activeSkill === 'ALL') {
+                // BOSS 5/MIRROR EFFECT: Complete Shadow Form invincibility frame
+                logMessage("🔮 Boss Skill: Shadow Mirror Form Active (Invulnerable!)");
+                player.hp = Math.min(player.baseHp, player.hp + 25); // Bulk repair mend heal
+                spawnExplosion(player.x, player.y, '#ffffff', 20);
+                player.abilityCooldowns[3] = 720; // 12 Second Cooldown
+            }
+
+            // Cycle item sequence array positions to let players rotate slots if they hold multiple boss keys
+            if (player.unlockedBossAbilities.length > 1) {
+                let currentItem = player.unlockedBossAbilities.shift();
+                player.unlockedBossAbilities.push(currentItem);
+                logMessage(`🔄 Skill cycled! Next up: Aspect [${player.unlockedBossAbilities[0]}]`);
+            }
+        }
+
     }
 
     function spawnExplosion(x, y, color, count=10) {
@@ -741,7 +822,7 @@
     function updateLogic() {
         // Cooldown processing loops
         if (player.dashCooldown > 0) player.dashCooldown--;
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 4; i++) {
             if (player.abilityCooldowns[i] > 0) player.abilityCooldowns[i]--;
         }
 
@@ -996,7 +1077,16 @@
                 if (hazard.duration <= 0) {
                     floorHazards.splice(hIdx, 1);
                 }
+                
             }
+            else if (hazard.type === 'player_storm') {
+    ctx.fillStyle = "rgba(168, 85, 247, 0.2)"; // Deep Purple transparent fill
+    ctx.fill();
+    ctx.strokeStyle = "rgba(168, 85, 247, 0.6)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+}
+
         });
 
         // --- PROJECTILE MOVEMENT & SPATIAL INTERSECTION CHECKS ---
@@ -1058,6 +1148,13 @@
                             logMessage(`🏆 TRIUMPH: You have overthrown ${boss.name}!`);
                             boss = null;
                             switchScreen('VICTORY');
+                            if (!player.unlockedBossAbilities.includes(boss.mimicStat)) {
+                                player.unlockedBossAbilities.push(boss.mimicStat);
+                                logMessage(`✨ SOUL LINK: Absorbed boss essence! Press [4] to cycle/activate your new elemental power!`);
+                            }
+                            boss = null;
+                            switchScreen('Victory');
+
                         }
                     }
                 }
