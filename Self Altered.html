@@ -407,8 +407,8 @@ function bossAI(b,dt){
  const p=state.player,a=b.aspect,ang=Math.atan2(p.y-b.y,p.x-b.x);
  let s=45+state.floor*10;b.x+=Math.cos(ang)*s*dt;b.y+=Math.sin(ang)*s*dt;
  if(b.cd<=0){
-   b.cd=Math.max(.65,1.5-state.floor*.1);
-   if(a.ability==="Flame Burst")for(let i=0;i<10;i++){let z=i*Math.PI*2/15;projectiles.push({x:b.x,y:b.y,vx:Math.cos(z)*300,vy:Math.sin(z)*300,r:7,damage:13,life:1.7,enemy:true,color:a.color})}
+   b.cd=Math.max(.30,1.0-state.floor*.05);
+   if(a.ability==="Flame Burst")for(let i=0;i<15;i++){let z=i*Math.PI*2/15;projectiles.push({x:b.x,y:b.y,vx:Math.cos(z)*300,vy:Math.sin(z)*300,r:7,damage:13,life:1.7,enemy:true,color:a.color})}
    if(a.ability==="Tidal Wave")mirrorWave(.65,a.color);
    if(a.ability==="Fault Line")mirrorLine(.7,a.color);
    if(a.ability==="Cyclone")mirrorCyclone(.7);
