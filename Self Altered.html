@@ -332,7 +332,7 @@ function endRun(win){
 function spawnMirror(){
  state.mode="mirror";state.boss={x:W/2,y:130,r:38,hp:effective().hp*2.2,maxhp:effective().hp*2.2,name:"THE MIRROR",aspect:{color:"#dce4ff",ability:"Mirror"},cd:1,hit:0};
  document.getElementById("bossbar").style.display="block";document.getElementById("bossName").textContent="THE MIRROR";
- showMessage("It has your stats. Your equipment. Every ability. 75% of your power.",3000);
+ showMessage("It has your stats.  Every ability. 75% of your power.",3000);
 }
 function mirrorAttack(){
  const e=effective(),p=state.player,b=state.boss;
@@ -375,7 +375,7 @@ function update(dt){
  for(const en of enemies){
    en.cd-=dt;en.hit=Math.max(0,en.hit-dt);
    const ang=Math.atan2(p.y-en.y,p.x-en.x),d=dist(en,p);
-   if(en.type==="shooter"){if(d>230){en.x+=Math.cos(ang)*35*dt;en.y+=Math.sin(ang)*35*dt}else if(d<180){en.x-=Math.cos(ang)*25*dt;en.y-=Math.sin(ang)*25*dt}if(en.cd<=0){enemyShoot(en);en.cd=1.7}}
+   if(en.type==="shooter"){if(d>230){en.x+=Math.cos(ang)*35*dt;en.y+=Math.sin(ang)*35*dt}else if(d<180){en.x-=Math.cos(ang)*25*dt;en.y-=Math.sin(ang)*25*dt}if(en.cd<=0){enemyShoot(en);en.cd=1.0}}
    else {let s=en.type==="tank"?30:52;en.x+=Math.cos(ang)*s*dt;en.y+=Math.sin(ang)*s*dt;if(d<en.r+p.r+4)hurtPlayer(en.type==="tank"?15:9)}
  }
  enemies=enemies.filter(e=>e.hp>0);
@@ -405,10 +405,10 @@ function update(dt){
 }
 function bossAI(b,dt){
  const p=state.player,a=b.aspect,ang=Math.atan2(p.y-b.y,p.x-b.x);
- let s=42+state.floor*5;b.x+=Math.cos(ang)*s*dt;b.y+=Math.sin(ang)*s*dt;
+ let s=45+state.floor*10;b.x+=Math.cos(ang)*s*dt;b.y+=Math.sin(ang)*s*dt;
  if(b.cd<=0){
    b.cd=Math.max(.65,1.5-state.floor*.1);
-   if(a.ability==="Flame Burst")for(let i=0;i<10;i++){let z=i*Math.PI*2/10;projectiles.push({x:b.x,y:b.y,vx:Math.cos(z)*300,vy:Math.sin(z)*300,r:7,damage:13,life:1.7,enemy:true,color:a.color})}
+   if(a.ability==="Flame Burst")for(let i=0;i<10;i++){let z=i*Math.PI*2/15;projectiles.push({x:b.x,y:b.y,vx:Math.cos(z)*300,vy:Math.sin(z)*300,r:7,damage:13,life:1.7,enemy:true,color:a.color})}
    if(a.ability==="Tidal Wave")mirrorWave(.65,a.color);
    if(a.ability==="Fault Line")mirrorLine(.7,a.color);
    if(a.ability==="Cyclone")mirrorCyclone(.7);
