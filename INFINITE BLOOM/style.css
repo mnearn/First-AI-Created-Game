@@ -1,0 +1,56 @@
+body {
+    background: #000F47;
+    color: #E8F3D1;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+#game {
+    width: 700px;
+    margin: auto;
+    padding-top: 20px;
+}
+
+#stats {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px;
+}
+
+.stat {
+    width: 45%;
+    background: #411061;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+button {
+    background: #306110;
+    color: #E8F3D1;
+    padding: 10px 20px;
+    margin: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #3f8a1a;
+}
+
+button.cooldown {
+    background: #1b3308;
+    cursor: not-allowed;
+}
+
+#log {
+    margin-top: 20px;
+    height: 250px;
+    overflow-y: auto;
+    background: #000F47;
+    padding: 10px;
+    border: 2px solid #3663FF;
+    text-align: left;
+    font-size: 14px;
+}
